@@ -1,96 +1,78 @@
-"use client"
-import { DragEvent, useState } from "react";
+'use client'
+import React, { useRef, useState } from 'react';
+import axios from 'axios';
+import { useDropzone } from 'react-dropzone';
+import './styles.css';
+import UploadArea from './components/upload_area';
+import { RiUploadCloud2Line } from 'react-icons/ri';
+import Image from 'next/image';
 
-export default function FileDrop() {
-  const [isOver, setIsOver] = useState(false);
-  const [files, setFiles] = useState<File[]>([]);
-  const [extractedtext,setExtractedtext] = useState<String >(" ");
+const Page: React.FC = () => {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [responseData, setResponseData] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Define the event handlers
-  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setIsOver(true);
-  };
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    accept: {
+        'image/png': ['.png'],
+        'text/html': ['.html', '.htm'],
+      },
+    onDrop: (acceptedFiles) => {
+      if (acceptedFiles.length > 0) {
+        const formData = new FormData();
+        formData.append('files', acceptedFiles[0]);
+        setImageUrl(URL.createObjectURL(acceptedFiles[0]));
+        axios.post('http://localhost:8000/uploadfiles/', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'accept': 'application/json',
+          },
+        })
+          .then((response) => {
+            if (response.data[0].file_path) {
+              setImageUrl(response.data[0].file_path);
+              setResponseData(response.data[0].extracted_text);
+            }
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+      }
+    },
+  });
 
-  const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setIsOver(false);
-  };
-
-  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setIsOver(false);
-
-    // Fetch the files
-    const droppedFiles = Array.from(event.dataTransfer.files);
-    setFiles(droppedFiles);
-
-    // Use FileReader to read file content
-    droppedFiles.forEach((file) => {
-      const reader = new FileReader();
-
-      reader.onloadend = () => {
-        console.log(reader.result);
-      };
-
-      reader.onerror = () => {
-        console.error("There was an issue reading the file.");
-      };
-
-      reader.readAsDataURL(file);
-      return reader;
-    });
-  };
-
-  // Define the function to send files to the FastAPI server
-  const handleSubmit = async () => {
-    if (files.length === 0) {
-      return;
-    }
-
-    const formData = new FormData();
-    files.forEach((file) => {
-      formData.append("files", file);
-    });
-
-    const response = await fetch("http://127.0.0.1:8000/uploadfiles/", {
-      method: "POST",
-      body: formData,
-   
-    });
-
-    if (response.ok) {
-      const text = await response.text();
-
-      setExtractedtext(text);
-      console.log(text);
-    } else {
-      console.error("An error occurred while uploading files.");
-    }
-  };
-
-  
 
   return (
-    <div
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "200px",
-        width: "300px",
-        border: "1px dotted",
-        backgroundColor: isOver ? "lightgray" : "white",
-      }}
-    >
-      <div>Drag and drop some files here</div>
-      <button onClick={handleSubmit}>Upload Files</button>
+    <div className='container'>
 
-      <textarea defaultValue={extractedtext.toString()}/>
+        <div className="wrapper">
+          <header>
+                File Upload
+          </header>
+          <form action="" {...getRootProps()}>
+              <input {...getInputProps()} />
+              <input type="file" className="file-input" hidden/>
+              {imageUrl ? (
+                <Image src={imageUrl} alt="Uploaded image" width={260} height={260}/>
+              ) : (
+                <div className="upload-placeholder">
+                  <RiUploadCloud2Line className='upload-image' />
+                  <p>Browse File to Upload</p>
+                </div>
+              )}
+          </form>
+        </div>
+
+       {/* <UploadArea/> */}
+      {responseData && (
+        <div className='result'>
+          <textarea>{responseData}</textarea>
+          <button onClick={() => setResponseData(null)}>Clear</button>
+        </div>
+      )}
+      
     </div>
   );
-}
+};
+
+export default Page;

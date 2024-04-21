@@ -1,0 +1,23 @@
+.head-upload-page{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    font-size: medium;
+}
+
+h1{
+    font-size: 25px;
+    font-weight: 200;
+}
+
+input{
+    background-color: #fff;
+    border-radius: 30px;
+    width: 20%;
+    height: 30px;
+    padding: 0 10px;
+    border-color: #333;
+    color: #444;
+    font-size: small;
+   
+}
