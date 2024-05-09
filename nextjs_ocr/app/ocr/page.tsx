@@ -6,22 +6,30 @@ import './styles.css';
 import UploadArea from './components/upload_area';
 import { RiUploadCloud2Line } from 'react-icons/ri';
 import Image from 'next/image';
+import * as path from 'path';
+import { Worker } from '@react-pdf-viewer/core';
+import { Viewer } from '@react-pdf-viewer/core';
+import '@react-pdf-viewer/core/lib/styles/index.css';
+
 
 const Page: React.FC = () => {
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [fileUrl, setfileUrl] = useState<string | null>(null);
   const [responseData, setResponseData] = useState<string | null>(null);
+  const [fileExtension,setFileExtension] = useState<string|null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+  const imagesExtension = ['.png','.jpg','.jpeg']
+  const pdfExtenssions = ['.pdf','.PDF']
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
-        'image/png': ['.png'],
+        'image/png': imagesExtension ,
         'text/html': ['.html', '.htm'],
+        "application/pdf":pdfExtenssions
       },
     onDrop: (acceptedFiles) => {
       if (acceptedFiles.length > 0) {
         const formData = new FormData();
         formData.append('files', acceptedFiles[0]);
-        setImageUrl(URL.createObjectURL(acceptedFiles[0]));
+        setfileUrl(URL.createObjectURL(acceptedFiles[0]));
         axios.post('http://localhost:8000/uploadfiles/', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
@@ -30,8 +38,9 @@ const Page: React.FC = () => {
         })
           .then((response) => {
             if (response.data[0].file_path) {
-              setImageUrl(response.data[0].file_path);
+              setfileUrl(response.data[0].file_path);
               setResponseData(response.data[0].extracted_text);
+              setFileExtension(path.extname(fileUrl!));
             }
           })
           .catch((error) => {
@@ -39,8 +48,9 @@ const Page: React.FC = () => {
           });
       }
     },
+    
   });
-
+  
 
   return (
     <div className='container'>
@@ -52,9 +62,25 @@ const Page: React.FC = () => {
           <form action="" {...getRootProps()}>
               <input {...getInputProps()} />
               <input type="file" className="file-input" hidden/>
-              {imageUrl ? (
-                <Image src={imageUrl} alt="Uploaded image" width={260} height={260}/>
-              ) : (
+              {fileUrl && (imagesExtension.includes(fileExtension!))? (
+                <Image src={fileUrl} alt="Uploaded image" width={260} height={260}/>
+            //   ) :fileUrl && (pdfExtenssions.includes(fileExtension!))?
+            //   (
+            //     <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">
+
+            //           <div
+            //               style={{
+            //                   border: '1px solid rgba(0, 0, 0, 0.3)',
+            //                   height: '750px',
+            //               }}
+            //           >
+            //               <Viewer fileUrl={fileUrl} />
+            //           </div>
+            //   </Worker>
+             
+            
+            // ) 
+              ):(
                 <div className="upload-placeholder">
                   <RiUploadCloud2Line className='upload-image' />
                   <p>Browse File to Upload</p>

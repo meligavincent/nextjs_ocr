@@ -138,3 +138,11 @@ section .details span{
 .ocr-page{
     margin: 0 auto;
 }
+
+textarea{
+    resize: none;
+    width: auto;
+    height: auto;
+    padding: 30px;
+    background: #fff;
+}
